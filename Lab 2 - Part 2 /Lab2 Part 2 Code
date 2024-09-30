@@ -1,0 +1,244 @@
+#This is Lab 2 part 2
+
+# this is exercise 1 code below with the iris dataset:
+## Call the NaiveBayes Classifier Package e1071, which auto calls the Class package ## 
+library("e1071")
+#Train classifier 
+classifier<-naiveBayes(iris[,1:4], iris[,5])
+# evaluate classification
+table(predict(classifier, iris[,-5]), iris[,5], dnn=list('predicted','actual'))
+#examine class means and standard deviations for petal length 
+classifier$tables$Petal.Length
+#plot normal distributions at the means of the classes
+# one class
+plot(function(x) dnorm(x, 1.462, 0.1736640), 0, 8, col="red", main="Petal length distribution for the 3 different species")
+# another class
+curve(dnorm(x, 4.260, 0.4699110), add=TRUE, col="blue")
+# the final class
+curve(dnorm(x, 5.552, 0.5518947 ), add=TRUE, col = "green")
+
+
+##This is the exercise 1 code from above repeated for the abalone dataset:
+## Call the abalone data set from UCI repository
+# reading the dataset from UCI repository URL
+abalone <- read.csv(url("https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data"), header = FALSE, sep = ",")
+# rename columns
+colnames(abalone) <- c("sex", "length", 'diameter', 'height', 'whole_weight', 'shucked_wieght', 'viscera_wieght', 'shell_weight', 'rings' )
+# add new column 
+#abalone$age.group with 3 values based on the number of rings 
+abalone$age.group <- cut(abalone$rings, br=c(0,8,11,35), labels = c("young", 'adult', 'old'))
+# drop the sex column (categorical variable) 
+abalone.norm <- abalone[,-1]
+# optionally normalize
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x))) } 
+abalone.norm[1:7] <- as.data.frame(lapply(abalone.norm[1:7], normalize))
+# rename columns for dataset
+colnames(abalone) <- c("sex", "length", 'diameter', 'height', 'whole_weight', 'shucked_wieght', 'viscera_wieght', 'shell_weight', 'rings' )
+#Train classifier with 1-6 and use it to predict 7
+classifier<-naiveBayes(abalone[,2:7], abalone[,10])
+# evaluate classification for 7
+table(predict(classifier, abalone[,2:7]), abalone[,10], dnn=list('predicted','actual'))
+#examine class means and standard deviations for length, width, and weight, also this table gives me my variables for the next graph
+classifier$tables$length
+#plot normal distributions at the means of the classes
+# one class
+plot(function(x) dnorm(x, 0.4209915, 0.11137474), 0, 1, ylim=c(0,5), col="red", main="Length distribution for old, young, and adult")
+# another class
+curve(dnorm(x, 0.5707182, 0.08740980), add=TRUE, col="blue")
+# the final class
+curve(dnorm(x, 0.5868542, 0.08100644 ), add=TRUE, col = "green")
+
+
+#this is for diameter
+#Train classifier with 1-6 and use it to predict 7
+classifier<-naiveBayes(abalone[,2:7], abalone[,10])
+# evaluate classification for 7
+table(predict(classifier, abalone[,2:7]), abalone[,10], dnn=list('predicted','actual'))
+#examine class means and standard deviations 
+classifier$tables$diameter
+#plot normal distributions at the means of the classes
+# one class
+plot(function(x) dnorm(x, 0.3212758, 0.09029187), 0, 1, ylim=c(0,10), col="red", main="Diameter distribution for old, young, and adult")
+# another class
+curve(dnorm(x, 0.4458591, 0.07153798), add=TRUE, col="blue")
+# the final class
+curve(dnorm(x, 0.4632083, 0.06699741 ), add=TRUE, col = "green")
+
+
+#this is for height
+#Train classifier with 1-6 and use it to predict 7
+classifier<-naiveBayes(abalone[,2:7], abalone[,10])
+# evaluate classification for 7
+table(predict(classifier, abalone[,2:7]), abalone[,10], dnn=list('predicted','actual'))
+#examine class means and standard deviations for length, width, and weight, also this table gives me my variables for the next graph
+classifier$tables$height
+#plot normal distributions at the means of the classes
+# one class
+plot(function(x) dnorm(x, 0.1065956, 0.04183039), 0, 1, ylim=c(0, 15), col="red", main="Height distribution for old, young, and adult")
+# another class
+curve(dnorm(x, 0.1516906, 0.02984784), add=TRUE, col="blue")
+# the final class
+curve(dnorm(x, 0.1648125, 0.02935998 ), add=TRUE, col = "green")
+
+
+
+
+
+#this is the K-nearest neighbors code with the abalone dataset: 
+# read dataset
+abalone <- read.csv(url("https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data"), header = FALSE, sep = ",")
+# rename columns
+colnames(abalone) <- c("sex", "length", 'diameter', 'height', 'whole_weight', 'shucked_wieght', 'viscera_wieght', 'shell_weight', 'rings' )
+# add new column 
+#abalone$age.group with 3 values based on the number of rings 
+abalone$age.group <- cut(abalone$rings, br=c(0,8,11,35), labels = c("young", 'adult', 'old'))
+# drop the sex column (categorical variable) 
+abalone.norm <- abalone[,-1]
+# optionally normalize
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x))) } 
+abalone.norm[1:7] <- as.data.frame(lapply(abalone.norm[1:7], normalize))
+# sample 2924 from 4177 (~70%) 
+s_abalone <- sample(4177,2924)
+#Abalone.norm.train <-abalone.norm[s_abalone,] #abalone.norm.test <-abalone.norm[-s_abalone,]
+## create train & test sets based on sampled indexes 
+abalone.train <-abalone[s_abalone,]
+abalone.test <-abalone[-s_abalone,]
+sqrt(2924)
+k=55
+#k = 80
+library(class)
+# train model & predict
+KNNpred <- knn(train = abalone.train[2:7], test = abalone.test[2:7], cl = abalone.train$age.group, k = k)
+# create contingency table/ confusion matrix 
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(abalone.test$age.group)
+accuracy <- c()
+ks <- c(35,45,55,65,75,85,95,105)
+for (k in ks) {
+KNNpred <- knn(train = abalone.train[2:7], test = abalone.test[2:7], cl = abalone.train$age.group, k = k) 
+cm = as.matrix(table(Actual=KNNpred, Predicted = abalone.test$age.group, dnn=list('predicted','actual'))) 
+accuracy <- c(accuracy,sum(diag(cm))/length(abalone.test$age.group))
+}
+plot(ks,accuracy,type = "b", ylim = c(0.4,0.8))
+
+
+
+#this is exercise 2 below with the iris dataset:
+# read dataset
+library("e1071")
+iris
+# add new column 
+# optionally normalize
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x))) } 
+iris[1:3] <- as.data.frame(lapply(iris[1:3], normalize))
+# sample 105 from 150 (~70%) 
+s_iris <- sample(150,105)
+#Abalone.norm.train <-abalone.norm[s_abalone,] #abalone.norm.test <-abalone.norm[-s_abalone,]
+## create train & test sets based on sampled indexes 
+iris.train <-iris[s_iris,]
+iris.test <-iris[-s_iris,]
+sqrt(105)
+k=10
+#k = 80
+library(class)
+# train model & predict
+KNNpred <- knn(train = iris.train[, 1:3], test = iris.test[, 1:3], cl = iris.train$Petal.Width, k = k)
+# create contingency table/ confusion matrix 
+contingency.table <- table(KNNpred, iris.test$Petal.Width)
+contingency.matrix <- as.matrix(contingency.table)
+accuracy_single <- sum(diag(contingency.matrix)) / length(iris.test$Petal.Width)
+print(paste("Accuracy for k =", k, ":", accuracy_single))
+accuracy <- c()
+ks <- c(9, 11, 13, 15, 17, 19)
+for(k in ks) {
+  KNNpred <- knn(train = iris.train[, 1:3], test = iris.test[, 1:3], cl = iris.train$Petal.Width, k = k)
+  cm <- as.matrix(table(Actual = iris.test$Petal.Width, Predicted = KNNpred))
+  accuracy <- c(accuracy, sum(diag(cm)) / length(iris.test$Petal.Width))
+}
+plot(ks, accuracy, type = "b", ylim = c(0, 1), main = "Accuracy vs. k-values for Petal Width", xlab = "k", ylab = "Accuracy")
+
+
+#repeat for Sepal Length
+# optionally normalize
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x))) } 
+iris[1:4] <- as.data.frame(lapply(iris[1:4], normalize))
+# sample 105 of 150 aka abt. 70%
+s_iris <- sample(150,105)
+## create train & test sets based on sampled indexes 
+iris.train <-iris[s_iris,]
+iris.test <-iris[-s_iris,]
+sqrt(105)
+k=10
+#k = 80
+library(class)
+# train model & predict
+KNNpred <- knn(train = iris.train[, 1:4], test = iris.test[, 1:4], cl = iris.train$Petal.Width, k = k)
+# create contingency table/ confusion matrix 
+contingency.table <- table(KNNpred, iris.test$Petal.Width)
+contingency.matrix <- as.matrix(contingency.table)
+accuracy_single <- sum(diag(contingency.matrix)) / length(iris.test$Petal.Width)
+print(paste("Accuracy for k =", k, ":", accuracy_single))
+accuracy <- c()
+ks <- c(9, 11, 13, 15, 17, 19)
+for(k in ks) {
+  KNNpred <- knn(train = iris.train[, 1:4], test = iris.test[, 1:4], cl = iris.train$Petal.Width, k = k)
+  cm <- as.matrix(table(Actual = iris.test$Petal.Width, Predicted = KNNpred))
+  accuracy <- c(accuracy, sum(diag(cm)) / length(iris.test$Petal.Width))
+}
+plot(ks, accuracy, type = "b", ylim = c(0, .4), main = "Accuracy vs. k-values for Sepal Length", xlab = "k", ylab = "Accuracy")
+
+
+
+#this is exercise 3 for iris dataset:
+# Plot iris petal length vs. petal width, color by species
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, colour = Species)) +
+geom_point()
+# set seed for random number generator 
+set.seed(123)
+# run k-means
+iris.km <- kmeans(iris[,-5], centers = 3)
+assigned.clusters <- as.factor(iris.km$cluster)
+ggplot(iris, aes(x = Petal.Length, y = Petal.Width, colour = assigned.clusters)) + geom_point()
+wss <- c()
+#for the next line of code i changed the k values from the original
+ks <- c(4,7,9,12)
+for (k in ks) {
+iris.km <- kmeans(iris[,-5], centers = k) 
+wss <- c(wss,iris.km$tot.withinss)
+}
+plot(ks,wss,type = "b")
+labeled.clusters <- as.character(assigned.clusters)
+labeled.clusters[labeled.clusters==1] <- "setosa" 
+labeled.clusters[labeled.clusters==2] <- "versivolor" 
+labeled.clusters[labeled.clusters==3] <- "virginica"
+table(labeled.clusters, iris[,5])
+
+
+#this is exercise 3 for abalone dataset below:
+# Plot iris petal length vs. petal width, color by species
+# read dataset
+abalone <- read.csv(url("https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data"), header = FALSE, sep = ",")
+# rename columns
+colnames(abalone) <- c("sex", "length", 'diameter', 'height', 'whole_weight', 'shucked_wieght', 'viscera_wieght', 'shell_weight', 'rings' )
+ggplot(abalone, aes(x = height, y = diameter, colour = sex)) +
+  geom_point() +
+  ggtitle("Height vs. Diamater by Sex")
+# set seed for random number generator 
+set.seed(345)
+# run k-means
+abalone.km <- kmeans(abalone.norm[-9], centers = 3)
+assigned.clusters <- as.factor(abalone.km$cluster)
+ggplot(abalone, aes(x = height, y = diameter, colour = assigned.clusters)) + geom_point()
+wss <- c()
+ks <- c(2,3,4,5)
+for (k in ks) {
+  abalone.km <- kmeans(abalone.norm[,-9], centers = k) 
+  wss <- c(wss,abalone.km$tot.withinss)
+}
+plot(ks, wss, type = "b", xlab = "Number of clusters (k)", ylab = "Total within-cluster sum of squares", 
+     main = "Elbow Method for Optimal k")
+labeled.clusters <- as.character(assigned.clusters)
+labeled.clusters[labeled.clusters==1] <- "F" 
+labeled.clusters[labeled.clusters==2] <- "I" 
+labeled.clusters[labeled.clusters==3] <- "M"
+table(labeled.clusters, abalone.norm[,9])
