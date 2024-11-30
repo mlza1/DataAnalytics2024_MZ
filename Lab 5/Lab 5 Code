@@ -1,0 +1,255 @@
+## This is Lab 5 for Data Analytics ##
+
+#load in the wine dataset
+# PCA with wine dataset
+wine <- read.csv("~/Desktop/wine/wine.data", header=FALSE)
+View(wine)
+names(wine) <- c("Type","Alcohol","Malic acid","Ash","Alcalinity of ash","Magnesium","Total phenols","Flavanoids","Nonflavanoid Phenols","Proanthocyanins","Color Intensity","Hue","Od280/od315 of diluted wines","Proline")
+head(wine)
+wine$Type <- as.factor(wine$Type)
+wine <- wine[,-c(4,5,10)]
+
+#load in the NYC housing dataset
+NYC_full <- read.csv("~/Desktop/NYC_Citywide_Annualized_Calendar_Sales_Update_20241111.csv")
+View (NYC_full)
+
+#load in libraries
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library("caret")
+library(e1071)
+library(ggfortify)
+library(class)
+library(psych)
+
+#Using the wine dataset:
+#Train 2 SVM classifiers to predict the type of wine using a subset of the other 11 variables. 
+## one is using a linear kernal and one is using a polynomial kernal
+wine
+# ## split train/test
+train.indexes <- sample(178,0.7*178)
+#make train and test groups
+train <- wine[train.indexes,]
+test <- wine[-train.indexes,]
+## separate x (features) & y (wine Type)
+x <- wine[,2:11] 
+y <- wine[,1]
+## feature boxplots
+boxplot(x, main="wine features")
+## class label distributions
+plot(y)
+## feature-class plots
+featurePlot(x=x, y=y, plot="ellipse")
+featurePlot(x=x, y=y, plot="box")
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+featurePlot(x=x, y=y, plot="density", scales=scales)
+ggplot(wine, aes(x = Alcohol, y = Proline, colour = Type)) +
+  geom_point()
+ggplot(wine, aes(x = Alcohol, y = Hue, colour = Type)) +
+  geom_point()
+ggplot(wine, aes(x = Magnesium, y = Proline, colour = Type)) +
+  geom_point()
+ggplot(wine, aes(x = Magnesium, y = Flavanoids, colour = Type)) +
+  geom_point()
+## train SVM model - linear kernel
+svm.mod0 <- svm(Type ~ ., data = train, kernel = 'linear')
+svm.mod0
+train.pred <- predict(svm.mod0, train)
+cm = as.matrix(table(Actual = train$Type, Predicted = train.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+## train SVM model - polynomial kernel
+svm.mod1 <- svm(Type ~ ., data = train, kernel = 'polynomial')
+svm.mod1
+train.pred <- predict(svm.mod1, train)
+cm = as.matrix(table(Actual = train$Type, Predicted = train.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+
+#Use tune.svm to find the optimum C and gamma values.
+## Tuned SVM - polynomial
+tuned.svm <- tune.svm(Type~., data = train, kernel = 'polynomial',gamma = seq(1/2^nrow(wine),1, .01), cost = 2^seq(-6, 4, 2))
+tuned.svm
+svm.mod2 <- svm(Type ~ ., data = train, kernel = 'polynomial', gamma = 0.69, cost = .25)
+svm.mod2
+train.pred <- predict(svm.mod2, train)
+cm = as.matrix(table(Actual = train$Type, Predicted = train.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+
+### Test set prediction ###
+## model 0 which is the linear 
+test.pred <- predict(svm.mod0, test)
+cm = as.matrix(table(Actual = test$Type, Predicted = test.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+
+## model 1 which is the polynomial
+test.pred <- predict(svm.mod1, test)
+cm = as.matrix(table(Actual = test$Type, Predicted = test.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+
+## model 2 which is the better tuned polynomial svm 
+test.pred <- predict(svm.mod2, test)
+cm = as.matrix(table(Actual = test$Type, Predicted = test.pred))
+cm
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted 
+recall = diag / rowsums 
+precision = diag / colsums
+f1 = 2 * precision * recall / (precision + recall) 
+data.frame(precision, recall, f1)
+
+
+#Choose another classification method (kNN, NaiveBayes, etc.) and train a classifier based on the same features.
+## I will use kNN to train a classifier model to predict wine type using the 11 attributes.
+# sample 124 values from 178 (~70%) 
+s_myvars <- sample(178,124)
+## number of rows
+n <- nrow(wine)
+## training set indexes
+train.indexes <- sample(n, n*.7)
+## create training/test sets
+wine.train <-wine[train.indexes,]
+wine.test <-wine[-train.indexes,]
+sqrt(124) 
+k = 11
+KNNpred <- knn(train = wine.train[1:11], test = wine.test[1:11], cl = wine.train$Type, k = k)
+# create contingency table/ confusion matrix 
+contingency.table1 <- table(KNNpred,wine.test$Type)
+contingency.matrix1 = as.matrix(contingency.table1) 
+sum(diag(contingency.matrix1))/length(wine$Type)
+accuracy <- c()
+ks <- c(1,2,3,4,5)
+for (k in ks) {
+  KNNpred <- knn(train = wine.train[1:11], test = wine.test[1:11], cl = wine.train$Type, k = k) 
+  cm = as.matrix(table(Actual=KNNpred, Predicted = wine.test$Type, dnn=list('predicted','actual'))) 
+  accuracy <- c(accuracy,sum(diag(cm))/length(wine.test$Type))
+}
+plot(ks,accuracy,type = "b", ylim = c(0,1)) +
+  title("Wine kNN")
+#Evaluate the model using a contingency matrix and calculate the accuracy of correct classifications.
+print(contingency.table1)
+print(accuracy)
+
+#Compare the performance of the 2 models (Precision, Recall, F1)
+    ##the kNN accuracy is worse than the SVM model meaning the SVM model may be the better of the two for this 
+
+
+#Using the NY housing dataset:
+#Train a SVM regression model to predict PRICE based on Square Footage 
+NYC_full
+#make subset of price data to keep it between 100 and 1,000,000 in cost 
+PRICE <- NYC_full %>%
+  filter(SALE.PRICE >= 100 & SALE.PRICE <= 100000)
+#check for missing values 
+sum(is.na(PRICE$SALE.PRICE))
+sum(is.na(PRICE$GROSS.SQUARE.FEET))
+#remove rows with missing values 
+PRICE <- na.omit(PRICE[, c("SALE.PRICE", "GROSS.SQUARE.FEET")])
+#check structure 
+str(PRICE$GROSS.SQUARE.FEET)
+#check for NA values 
+sum(is.na(PRICE$GROSS.SQUARE.FEET))
+#make numeric 
+PRICE$GROSS.SQUARE.FEET <- as.numeric(as.character(PRICE$GROSS.SQUARE.FEET))
+#train SVM model 
+svm_model <- svm(SALE.PRICE ~ GROSS.SQUARE.FEET, data = PRICE)
+#make predictions 
+predicted_prices <- predict(svm_model, newdata = PRICE[, c("GROSS.SQUARE.FEET")])
+sum(is.na(PRICE$GROSS.SQUARE.FEET))
+PRICE.new <- na.omit(PRICE)
+#add predicted values to dataset
+PRICE.new$predicted_sale_price <- predicted_prices
+
+#plot the predicted vs real prices
+ggplot(PRICE.new, aes(x = SALE.PRICE, y = predicted_sale_price)) +
+  geom_point(color = "blue", alpha = 0.6) +  # Scatter plot
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +  # Line of equality
+  labs(title = "Predicted vs Real Sale Price",
+       x = "Real Sale Price",
+       y = "Predicted Sale Price") +
+  theme_minimal()
+
+#train a linear model 
+LM.model <- lm(SALE.PRICE ~ ., data = PRICE.new)
+LM.model <- lm(SALE.PRICE ~ GROSS.SQUARE.FEET, data = PRICE.new)
+#make a summary of the model
+summary(LM.model)
+#plot the model
+par(mfrow = c(1, 1))
+plot(LM.model)
+#plot model again but with ggplot 
+ggplot(LM.model, aes(x = GROSS.SQUARE.FEET, y = SALE.PRICE)) +
+  geom_point() + scale_y_log10() +
+  stat_smooth(method = "lm")
+
+#predictions on the dataset
+predictions <- predict(LM.model, newdata = PRICE.new)
+#view the predicted values along with the actual values
+results <- data.frame(Actual = PRICE.new$SALE.PRICE, Predicted = predictions)
+head(results)
+#calculate RMSE
+rmse <- sqrt(mean((predictions - PRICE.new$SALE.PRICE)^2))
+cat("RMSE:", rmse)
+#calculate the mean absolute error (MAE)
+mae <- mean(abs(predictions - PRICE.new$SALE.PRICE))
+cat("MAE:", mae)
+
